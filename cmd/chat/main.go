@@ -12,7 +12,6 @@ import (
 )
 
 var addr = flag.String("addr", ":8080", "http service address")
-var homeTempl = template.Must(template.ParseFiles("home.html"))
 
 type chatHandler struct {
 	hub *hub
@@ -28,6 +27,7 @@ func (h *chatHandler) serveHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	homeTempl := template.Must(template.ParseFiles("home.html"))
 	homeTempl.Execute(w, r.Host)
 }
 

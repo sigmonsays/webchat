@@ -6,6 +6,7 @@ package main
 
 import (
 	"container/list"
+	"fmt"
 	"log"
 	"sync"
 )
@@ -15,6 +16,7 @@ type OpCode int
 const (
 	MessageOp OpCode = iota
 	HistoryOp
+	NoticeOp
 )
 
 type Message struct {
@@ -35,7 +37,7 @@ type hub struct {
 
 func NewHub() *hub {
 	h := &hub{
-		broadcast:   make(chan *Message),
+		broadcast:   make(chan *Message, 50),
 		register:    make(chan *connection),
 		unregister:  make(chan *connection),
 		connections: make(map[*connection]bool),
@@ -54,12 +56,17 @@ func (h *hub) getHistory() []*Message {
 	return ret
 }
 
+func (h *hub) send(op OpCode, msg string) {
+	h.broadcast <- &Message{op, msg}
+}
 func (h *hub) run() {
 	for {
 		select {
 		case c := <-h.register:
 			log.Printf("register connection %#v\n", c)
 			h.connections[c] = true
+
+			h.send(NoticeOp, fmt.Sprintf("%+v has joined", c))
 
 			// play back history
 			for _, m := range h.getHistory() {
