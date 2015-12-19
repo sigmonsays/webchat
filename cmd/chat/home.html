@@ -1,8 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Chat.</title>
+<title>Chat..</title>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+<script>
+   var Notification = window.Notification || window.mozNotification || window.webkitNotification;
+
+   function requestNotifyPermission() {
+      Notification.requestPermission(function (permission) {
+         // console.log(permission);
+      });
+   }
+
+   function showNotification(title, body) {
+      var instance = new Notification(
+         "title", {
+            body: body
+         }
+      );
+
+      instance.onclick = function () {
+         // Something to do
+      };
+      instance.onerror = function () {
+         // Something to do
+      };
+      instance.onshow = function () {
+         // Something to do
+      };
+      instance.onclose = function () {
+         // Something to do
+      };
+   }
+</script>
+
+
 <script type="text/javascript">
     $(function() {
 
@@ -45,6 +78,7 @@
                data = JSON.parse(evt.data)
                prefix = "<" + data['name'] + "> "
                appendLog($("<div/>").text(prefix + data['message']))
+               showNotification(data['name'], data['message'])
         }
     } else {
         appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
@@ -67,29 +101,32 @@ body {
 
 #log {
     background: white;
+    border: 1px solid black;
     margin: 0;
     padding: 0.5em 0.5em 0.5em 0.5em;
-    position: absolute;
-    top: 0.5em;
+    top: 1.5em;
     left: 0.5em;
     right: 0.5em;
     bottom: 3em;
     overflow: auto;
+    position: absolute;
 }
 
 #form {
     padding: 0 0.5em 0 0.5em;
     margin: 0;
-    position: absolute;
     bottom: 1em;
     left: 0px;
     width: 100%;
     overflow: hidden;
+    position: absolute;
 }
 
 </style>
 </head>
 <body>
+&nbsp; <span style="color: white;">To get desktop notifications </span><button type="button" onclick="requestNotifyPermission()">Notify me!</button>
+<p/>
 <div id="log"></div>
 <form id="form">
     <input type="submit" value="Send" />
@@ -98,3 +135,6 @@ body {
 </form>
 </body>
 </html>
+
+
+
