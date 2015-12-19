@@ -9,7 +9,7 @@
 
    var MessageOp = 0
    var HistoryOp = 1
-   var NotifyOp = 2
+   var NoticeOp = 2
    var JoinOp = 3
    var NickOp = 4
 
@@ -102,6 +102,10 @@
         if (!msg.val()) {
             return false;
         }
+        if (!name.val()) {
+            alert('set a username please')
+            return false;
+        }
         data = {
          'from': name.val(),
          'message': msg.val(),
@@ -119,6 +123,15 @@
                'from': name.val(),
             }
             conn.send(JSON.stringify(data))
+
+            if (name.val() != "") {
+               data = {
+                  'op': NickOp,
+                  'from': name.val(),
+               }
+               conn.send(JSON.stringify(data))
+            }
+
             appendLog($("<div><b>Connection opened.</b></div>"))
         }
         conn.onclose = function(evt) {
@@ -127,7 +140,7 @@
         conn.onmessage = function(evt) {
                data = JSON.parse(evt.data)
                console.log("onmessage: " + evt.data);
-               if (data['op'] == NotifyOp) {
+               if (data['op'] == NoticeOp) {
                   prefix = " :notice: "
                   appendLog($("<div/>").text(prefix + data['message']))
                   showNotification("notice", data['message'])

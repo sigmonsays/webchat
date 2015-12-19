@@ -90,7 +90,6 @@ func (h *hub) send(op OpCode, msg string) {
 func (h *hub) sendBroadcast(m *Message) {
 	for c := range h.connections {
 		m.Id = c.id
-		m.Op = HistoryOp
 		select {
 		case c.send <- m:
 		default:
@@ -117,6 +116,7 @@ func (h *hub) run() {
 
 			// play back history
 			for _, m := range h.getHistory() {
+				m.Op = HistoryOp
 				select {
 				case c.send <- m:
 				default:
