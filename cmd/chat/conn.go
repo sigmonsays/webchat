@@ -55,7 +55,7 @@ func (c *connection) readPump() {
 		if err != nil {
 			break
 		}
-		c.hub.broadcast <- &Message{MessageOp, string(message)}
+		c.hub.broadcast <- message
 	}
 }
 
@@ -79,7 +79,7 @@ func (c *connection) writePump() {
 				c.write(websocket.CloseMessage, []byte{})
 				return
 			}
-			if err := c.write(websocket.TextMessage, []byte(message.Message)); err != nil {
+			if err := c.write(websocket.TextMessage, message.Json()); err != nil {
 				return
 			}
 		case <-ticker.C:

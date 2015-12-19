@@ -7,6 +7,9 @@
 <script>
    var Notification = window.Notification || window.mozNotification || window.webkitNotification;
 
+   var MessageOp = 0
+   var NotifyOp = 2
+   var JoinOp = 3
 
    function requestNotifyPermission() {
       Notification.requestPermission(function (permission) {
@@ -65,7 +68,7 @@
             return false;
         }
         data = {
-         'name': name.val(),
+         'from': name.val(),
          'message': msg.val(),
         }
         conn.send(JSON.stringify(data))
@@ -75,15 +78,24 @@
 
     if (window["WebSocket"]) {
         conn = new WebSocket("ws://{{$}}/ws");
+        conn.onopen = function(evt) {
+            appendLog($("<div><b>Connection opened.</b></div>"))
+        }
         conn.onclose = function(evt) {
             appendLog($("<div><b>Connection closed.</b></div>"))
         }
         conn.onmessage = function(evt) {
                data = JSON.parse(evt.data)
                console.log("onmessage: " + evt.data);
-               prefix = "<" + data['name'] + "> "
-               appendLog($("<div/>").text(prefix + data['message']))
-               showNotification(data['name'], data['message'])
+               if (data['op'] == NotifyOp) {
+                  prefix = " :notice: "
+                  appendLog($("<div/>").text(prefix + data['message']))
+                  showNotification("notice", data['message'])
+               } else if (data['op'] == MessageOp) {
+                  prefix = "<" + data['from'] + "> "
+                  appendLog($("<div/>").text(prefix + data['message']))
+                  showNotification(data['from'], data['message'])
+               }
         }
     } else {
         appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
