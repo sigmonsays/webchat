@@ -1,6 +1,4 @@
-// Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+//go:generate stringer -type=OpCode
 
 package main
 
@@ -19,13 +17,15 @@ const (
 	HistoryOp
 	NoticeOp
 	JoinOp
+	NickOp
 )
 
 type Message struct {
-	Id      int64  `json:"id"`
-	Op      OpCode `json:"op"`
-	From    string `json:"from"`
-	Message string `json:"message"`
+	connection *connection
+	Id         int64  `json:"id"`
+	Op         OpCode `json:"op"`
+	From       string `json:"from"`
+	Message    string `json:"message"`
 
 	// pop up a notification
 	Notify bool `json:"notify"`
@@ -40,11 +40,21 @@ func (m *Message) FromJson(data []byte) error {
 	return err
 }
 
+// a low level message
+type message struct {
+	data       []byte
+	connection *connection
+}
+
+func (m *message) String() string {
+	return fmt.Sprintf("<conn:%d data:%d>", m.connection.id, len(m.data))
+}
+
 // hub maintains the set of active connections and broadcasts messages to the
 // connections.
 type hub struct {
 	connections map[*connection]bool
-	broadcast   chan []byte
+	broadcast   chan *message
 	register    chan *connection
 	unregister  chan *connection
 	mx          sync.Mutex
@@ -53,7 +63,7 @@ type hub struct {
 
 func NewHub() *hub {
 	h := &hub{
-		broadcast:   make(chan []byte, 50),
+		broadcast:   make(chan *message, 50),
 		register:    make(chan *connection),
 		unregister:  make(chan *connection),
 		connections: make(map[*connection]bool),
@@ -74,7 +84,7 @@ func (h *hub) getHistory() []*Message {
 
 func (h *hub) send(op OpCode, msg string) {
 	m := &Message{Op: op, Message: msg}
-	h.broadcast <- m.Json()
+	h.sendBroadcast(m)
 }
 
 func (h *hub) sendBroadcast(m *Message) {
@@ -88,6 +98,14 @@ func (h *hub) sendBroadcast(m *Message) {
 		}
 	}
 }
+func (h *hub) findConnection(id int64) (*connection, error) {
+	for c := range h.connections {
+		if c.id == id {
+			return c, nil
+		}
+	}
+	return nil, fmt.Errorf("not found id:%d", id)
+}
 
 func (h *hub) run() {
 	for {
@@ -95,8 +113,6 @@ func (h *hub) run() {
 		case c := <-h.register:
 			log.Printf("register connection %#v\n", c)
 			h.connections[c] = true
-
-			h.send(NoticeOp, fmt.Sprintf("someone has joined"))
 
 			// play back history
 			for _, m := range h.getHistory() {
@@ -109,21 +125,25 @@ func (h *hub) run() {
 			}
 
 		case c := <-h.unregister:
-
 			log.Printf("unregister connection %#v\n", c)
 			if _, ok := h.connections[c]; ok {
 				delete(h.connections, c)
 				close(c.send)
 				h.send(NoticeOp, fmt.Sprintf("someone has left"))
 			}
+
 		case data := <-h.broadcast:
-			log.Printf("broadcast %s\n", string(data))
-			m := &Message{}
-			err := m.FromJson(data)
+			m := &Message{
+				connection: data.connection,
+				Id:         data.connection.id,
+			}
+
+			err := m.FromJson(data.data)
 			if err != nil {
 				log.Printf("ERROR: FromJson [ %s ]: %s", data, err)
 				continue
 			}
+			log.Printf("broadcast %s %s %s\n", m.Op, data, string(data.data))
 
 			if m.Op == MessageOp {
 				h.history.PushBack(m)
@@ -133,6 +153,22 @@ func (h *hub) run() {
 					}
 				}
 				h.sendBroadcast(m)
+			} else if m.Op == JoinOp {
+
+			} else if m.Op == NickOp {
+				conn, err := h.findConnection(m.Id)
+				if err != nil {
+					log.Printf("findConnection %d: %s", m.Id, err)
+					continue
+				}
+
+				if conn.Name == "" {
+					h.send(NoticeOp, fmt.Sprintf("%s has joined", m.From))
+				} else {
+					h.send(NoticeOp, fmt.Sprintf("%s has changed their name to %s", conn.Name, m.From))
+				}
+				conn.Name = m.From
+
 			} else if m.Op == NoticeOp {
 				h.sendBroadcast(m)
 			} else {

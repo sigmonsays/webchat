@@ -10,6 +10,7 @@
    var MessageOp = 0
    var NotifyOp = 2
    var JoinOp = 3
+   var NickOp = 4
 
    function requestNotifyPermission() {
       Notification.requestPermission(function (permission) {
@@ -51,6 +52,39 @@
     var name = $("#name");
     var log = $("#log");
 
+
+    function setCookie(cname, cvalue, exdays) {
+       var d = new Date();
+       d.setTime(d.getTime() + (exdays*24*60*60*1000));
+       var expires = "expires="+d.toUTCString();
+       document.cookie = cname + "=" + cvalue + "; " + expires;
+    }
+    function getCookie(cname) {
+       var name = cname + "=";
+       var ca = document.cookie.split(';');
+       for(var i=0; i<ca.length; i++) {
+           var c = ca[i];
+           while (c.charAt(0)==' ') c = c.substring(1);
+           if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+       }
+       return "";
+    }
+
+    var username = getCookie("username")
+    if (username != "") {
+      name.val(username)
+    }
+
+    name.change(function() {
+       console.log("name changed: " + $(this).val())
+       data = {
+          'op': NickOp,
+          'from': $(this).val(),
+       }
+       conn.send(JSON.stringify(data))
+       setCookie("username", $(this).val())
+    })
+
     function appendLog(msg) {
         var d = log[0]
         var doScroll = d.scrollTop == d.scrollHeight - d.clientHeight;
@@ -79,6 +113,11 @@
     if (window["WebSocket"]) {
         conn = new WebSocket("ws://{{$}}/ws");
         conn.onopen = function(evt) {
+            data = {
+               'op': JoinOp,
+               'from': name.val(),
+            }
+            conn.send(JSON.stringify(data))
             appendLog($("<div><b>Connection opened.</b></div>"))
         }
         conn.onclose = function(evt) {

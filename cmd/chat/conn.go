@@ -29,7 +29,8 @@ var upgrader = websocket.Upgrader{
 
 // connection is an middleman between the websocket connection and the hub.
 type connection struct {
-	id int64
+	id   int64
+	Name string
 
 	hub *hub
 
@@ -50,11 +51,14 @@ func (c *connection) readPump() {
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
 	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.ws.ReadMessage()
+		_, msg, err := c.ws.ReadMessage()
 		if err != nil {
 			break
 		}
-		c.hub.broadcast <- message
+		c.hub.broadcast <- &message{
+			connection: c,
+			data:       msg,
+		}
 	}
 }
 
