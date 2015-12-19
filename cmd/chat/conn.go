@@ -1,13 +1,10 @@
-// Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package main
 
 import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"sync/atomic"
 	"time"
 )
 
@@ -32,6 +29,8 @@ var upgrader = websocket.Upgrader{
 
 // connection is an middleman between the websocket connection and the hub.
 type connection struct {
+	id int64
+
 	hub *hub
 
 	// The websocket connection.
@@ -97,7 +96,9 @@ func (h *chatHandler) serveWs(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+	id := atomic.AddInt64(&h.connections, 1)
 	c := &connection{
+		id:   id,
 		hub:  h.hub,
 		send: make(chan *Message, 256),
 		ws:   ws,

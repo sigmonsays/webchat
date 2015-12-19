@@ -14,7 +14,8 @@ import (
 var addr = flag.String("addr", ":8080", "http service address")
 
 type chatHandler struct {
-	hub *hub
+	connections int64
+	hub         *hub
 }
 
 func (h *chatHandler) serveHome(w http.ResponseWriter, r *http.Request) {

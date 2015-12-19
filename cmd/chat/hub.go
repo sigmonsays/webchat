@@ -22,6 +22,7 @@ const (
 )
 
 type Message struct {
+	Id      int64  `json:"id"`
 	Op      OpCode `json:"op"`
 	From    string `json:"from"`
 	Message string `json:"message"`
@@ -78,6 +79,7 @@ func (h *hub) send(op OpCode, msg string) {
 
 func (h *hub) sendBroadcast(m *Message) {
 	for c := range h.connections {
+		m.Id = c.id
 		select {
 		case c.send <- m:
 		default:
@@ -107,6 +109,7 @@ func (h *hub) run() {
 			}
 
 		case c := <-h.unregister:
+
 			log.Printf("unregister connection %#v\n", c)
 			if _, ok := h.connections[c]; ok {
 				delete(h.connections, c)
