@@ -8,6 +8,7 @@
    var Notification = window.Notification || window.mozNotification || window.webkitNotification;
 
    var MessageOp = 0
+   var HistoryOp = 1
    var NotifyOp = 2
    var JoinOp = 3
    var NickOp = 4
@@ -130,10 +131,12 @@
                   prefix = " :notice: "
                   appendLog($("<div/>").text(prefix + data['message']))
                   showNotification("notice", data['message'])
-               } else if (data['op'] == MessageOp) {
+               } else if ( (data['op'] == MessageOp) || (data['op'] == HistoryOp) ) {
                   prefix = "<" + data['from'] + "> "
                   appendLog($("<div/>").text(prefix + data['message']))
-                  showNotification(data['from'], data['message'])
+                  if (data['notify'] == true) {
+                     showNotification(data['from'], data['message'])
+                  }
                }
         }
     } else {

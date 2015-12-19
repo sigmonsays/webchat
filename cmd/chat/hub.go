@@ -90,6 +90,7 @@ func (h *hub) send(op OpCode, msg string) {
 func (h *hub) sendBroadcast(m *Message) {
 	for c := range h.connections {
 		m.Id = c.id
+		m.Op = HistoryOp
 		select {
 		case c.send <- m:
 		default:
@@ -152,6 +153,8 @@ func (h *hub) run() {
 						h.history.Remove(e)
 					}
 				}
+				h.sendBroadcast(m)
+			} else if m.Op == HistoryOp {
 				h.sendBroadcast(m)
 			} else if m.Op == JoinOp {
 
