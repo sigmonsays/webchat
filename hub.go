@@ -99,7 +99,7 @@ func (h *hub) Start() {
 			if _, ok := h.connections[c]; ok {
 				delete(h.connections, c)
 				close(c.send)
-				h.send(NoticeOp, fmt.Sprintf("someone has left"))
+				h.send(NoticeOp, fmt.Sprintf("%s has left", c.Name))
 			}
 
 		case data := <-h.broadcast:
