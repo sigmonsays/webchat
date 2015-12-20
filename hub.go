@@ -80,7 +80,7 @@ func (h *hub) Start() {
 	for {
 		select {
 		case c := <-h.register:
-			log.Printf("register connection id:%d remote:%s\n", c.id, c.remote)
+			log.Printf("register connection id:%d remote:%s\n", c.id, c.ws.RemoteAddr())
 			h.connections[c] = true
 
 			// play back history
@@ -95,7 +95,7 @@ func (h *hub) Start() {
 			}
 
 		case c := <-h.unregister:
-			log.Printf("unregister connection id:%d remote:%s\n", c.id, c.remote)
+			log.Printf("unregister connection id:%d remote:%s\n", c.id, c.ws.RemoteAddr())
 			if _, ok := h.connections[c]; ok {
 				delete(h.connections, c)
 				close(c.send)

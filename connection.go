@@ -26,12 +26,10 @@ var upgrader = websocket.Upgrader{
 
 // connection is an middleman between the websocket connection and the hub.
 type connection struct {
-	id int64
-
-	Name   string
-	remote string
-
 	hub *hub
+	id  int64
+
+	Name string
 
 	// The websocket connection.
 	ws *websocket.Conn
