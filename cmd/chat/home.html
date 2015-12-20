@@ -7,11 +7,13 @@
 <script>
    var Notification = window.Notification || window.mozNotification || window.webkitNotification;
 
-   var MessageOp = 0
-   var HistoryOp = 1
-   var NoticeOp = 2
-   var JoinOp = 3
-   var NickOp = 4
+   var InvalidOp = 0
+   var RegisterOp = 1
+   var UnregisterOp = 2
+   var MessageOp = 3
+   var NoticeOp = 4
+   var JoinOp = 5
+   var NickOp = 6
 
    function requestNotifyPermission() {
       Notification.requestPermission(function (permission) {
@@ -107,6 +109,7 @@
             return false;
         }
         data = {
+         'op': MessageOp,
          'from': name.val(),
          'message': msg.val(),
         }

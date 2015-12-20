@@ -1,7 +1,6 @@
 package webchat
 
 import (
-	"container/list"
 	"fmt"
 	"log"
 	"sync"
@@ -10,51 +9,64 @@ import (
 // a low level message
 type message struct {
 	data       []byte
-	connection *connection
+	connection *Connection
 }
 
 func (m *message) String() string {
 	return fmt.Sprintf("<conn:%d data:%d>", m.connection.id, len(m.data))
 }
 
+type CallbackFn func(op OpCode, hub *Hub, c *Connection, m *Message) error
+
 // hub maintains the set of active connections and broadcasts messages to the
 // connections.
-type hub struct {
-	connections map[*connection]bool
+type Hub struct {
+	connections map[*Connection]bool
 	broadcast   chan *message
-	register    chan *connection
-	unregister  chan *connection
+	register    chan *Connection
+	unregister  chan *Connection
 	mx          sync.Mutex
-	history     *list.List
+
+	callbacks map[OpCode][]CallbackFn
 }
 
-func NewHub() *hub {
-	h := &hub{
+func NewHub() *Hub {
+	callbacks := make(map[OpCode][]CallbackFn, 0)
+	h := &Hub{
 		broadcast:   make(chan *message, 50),
-		register:    make(chan *connection),
-		unregister:  make(chan *connection),
-		connections: make(map[*connection]bool),
-		history:     list.New(),
+		register:    make(chan *Connection),
+		unregister:  make(chan *Connection),
+		connections: make(map[*Connection]bool),
+		callbacks:   callbacks,
 	}
 	return h
 }
 
-func (h *hub) getHistory() []*Message {
-	h.mx.Lock()
-	defer h.mx.Unlock()
-	ret := make([]*Message, 0)
-	for e := h.history.Front(); e != nil; e = e.Next() {
-		ret = append(ret, e.Value.(*Message))
+func (h *Hub) OnCallback(callback OpCode, fn CallbackFn) {
+	ls, ok := h.callbacks[callback]
+	if ok == false {
+		ls = make([]CallbackFn, 0)
 	}
-	return ret
+	ls = append(ls, fn)
+	h.callbacks[callback] = ls
 }
 
-func (h *hub) send(op OpCode, msg string) {
+func (h *Hub) SendMessage(c *Connection, m *Message) error {
+	select {
+	case c.send <- m:
+	default:
+		close(c.send)
+		delete(h.connections, c)
+	}
+	return nil
+}
+
+func (h *Hub) Send(op OpCode, msg string) {
 	m := &Message{Op: op, Message: msg}
-	h.sendBroadcast(m)
+	h.SendBroadcast(m)
 }
 
-func (h *hub) sendBroadcast(m *Message) {
+func (h *Hub) SendBroadcast(m *Message) {
 	for c := range h.connections {
 		m.Id = c.id
 		select {
@@ -65,7 +77,8 @@ func (h *hub) sendBroadcast(m *Message) {
 		}
 	}
 }
-func (h *hub) findConnection(id int64) (*connection, error) {
+
+func (h *Hub) findConnection(id int64) (*Connection, error) {
 	for c := range h.connections {
 		if c.id == id {
 			return c, nil
@@ -74,30 +87,39 @@ func (h *hub) findConnection(id int64) (*connection, error) {
 	return nil, fmt.Errorf("not found id:%d", id)
 }
 
-func (h *hub) Start() {
+func (h *Hub) dispatch(op OpCode, c *Connection, m *Message) error {
+	callbacks, ok := h.callbacks[op]
+	if ok == false {
+		return nil
+	}
+	log.Printf("dispatch %s: callbacks:%d", op, len(callbacks))
+
+	var err error
+	for _, callback := range callbacks {
+		err = callback(op, h, c, m)
+		if err != nil {
+			log.Printf("callback %s: %s", op, err)
+		}
+	}
+
+	return nil
+}
+
+func (h *Hub) Start() {
 	for {
 		select {
 		case c := <-h.register:
 			log.Printf("register connection id:%d remote:%s\n", c.id, c.ws.RemoteAddr())
 			h.connections[c] = true
 
-			// play back history
-			for _, m := range h.getHistory() {
-				m.Op = HistoryOp
-				select {
-				case c.send <- m:
-				default:
-					close(c.send)
-					delete(h.connections, c)
-				}
-			}
+			h.dispatch(RegisterOp, c, nil)
 
 		case c := <-h.unregister:
 			log.Printf("unregister connection id:%d remote:%s\n", c.id, c.ws.RemoteAddr())
 			if _, ok := h.connections[c]; ok {
 				delete(h.connections, c)
 				close(c.send)
-				h.send(NoticeOp, fmt.Sprintf("%s has left", c.Name))
+				h.dispatch(UnregisterOp, c, nil)
 			}
 
 		case data := <-h.broadcast:
@@ -111,38 +133,10 @@ func (h *hub) Start() {
 				log.Printf("ERROR: FromJson [ %s ]: %s", data, err)
 				continue
 			}
-			log.Printf("broadcast %s %s %s\n", m.Op, data, string(data.data))
-
-			if m.Op == MessageOp {
-				h.history.PushBack(m)
-				if h.history.Len() > 5 {
-					if e := h.history.Front(); e != nil {
-						h.history.Remove(e)
-					}
-				}
-				h.sendBroadcast(m)
-			} else if m.Op == HistoryOp {
-				h.sendBroadcast(m)
-			} else if m.Op == JoinOp {
-
-			} else if m.Op == NickOp {
-				conn, err := h.findConnection(m.Id)
-				if err != nil {
-					log.Printf("findConnection %d: %s", m.Id, err)
-					continue
-				}
-
-				if conn.Name == "" {
-					h.send(NoticeOp, fmt.Sprintf("%s has joined", m.From))
-				} else {
-					h.send(NoticeOp, fmt.Sprintf("%s has changed their name to %s", conn.Name, m.From))
-				}
-				conn.Name = m.From
-
-			} else if m.Op == NoticeOp {
-				h.sendBroadcast(m)
-			} else {
-				log.Printf("Unhandled op %+v\n", m)
+			log.Printf("dispatch %s %s %s\n", m.Op, data, string(data.data))
+			err = h.dispatch(m.Op, data.connection, m)
+			if err != nil {
+				log.Printf("dispatch %s: %s\n", m.Op, err)
 			}
 		}
 	}

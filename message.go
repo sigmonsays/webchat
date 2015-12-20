@@ -9,15 +9,28 @@ import (
 type OpCode int
 
 const (
-	MessageOp OpCode = iota
-	HistoryOp
+	InvalidOp OpCode = iota
+
+	// client has connected
+	RegisterOp
+
+	// client has disconnected
+	UnregisterOp
+
+	// a message has been sent
+	MessageOp
+
+	// a notice is a informational message. likely from the system
 	NoticeOp
+	// a user has joined
 	JoinOp
+
+	// a user has changed their nick name
 	NickOp
 )
 
 type Message struct {
-	connection *connection
+	connection *Connection
 	Id         int64  `json:"id"`
 	Op         OpCode `json:"op"`
 	From       string `json:"from"`

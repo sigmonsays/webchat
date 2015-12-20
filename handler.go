@@ -3,18 +3,22 @@ package webchat
 import (
 	"log"
 	"net/http"
+	"sync"
 	"sync/atomic"
 )
 
-func NewHandler(hub *hub) (*Handler, error) {
-	h := &Handler{hub: hub}
+func NewHandler(hub *Hub) (*Handler, error) {
+	h := &Handler{
+		hub: hub,
+	}
 	return h, nil
 
 }
 
 type Handler struct {
+	mx          sync.Mutex
 	connections int64
-	hub         *hub
+	hub         *Hub
 }
 
 // serveWs handles websocket requests from the peer.
@@ -25,7 +29,7 @@ func (h *Handler) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := atomic.AddInt64(&h.connections, 1)
-	c := &connection{
+	c := &Connection{
 		id:   id,
 		hub:  h.hub,
 		send: make(chan *Message, 256),
