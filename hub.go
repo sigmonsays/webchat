@@ -95,7 +95,7 @@ func (h *hub) Start() {
 			}
 
 		case c := <-h.unregister:
-			log.Printf("unregister connection %#v\n", c)
+			log.Printf("unregister connection id:%d remote:%s\n", c.id, c.remote)
 			if _, ok := h.connections[c]; ok {
 				delete(h.connections, c)
 				close(c.send)
