@@ -1,3 +1,5 @@
+//go:generate stringer -type=OpCode
+
 package webchat
 
 import (
@@ -20,9 +22,6 @@ type Message struct {
 	Op         OpCode `json:"op"`
 	From       string `json:"from"`
 	Message    string `json:"message"`
-
-	// pop up a notification
-	Notify bool `json:"notify"`
 }
 
 func (m *Message) Json() []byte {
