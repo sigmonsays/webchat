@@ -1,44 +1,13 @@
 //go:generate stringer -type=OpCode
 
-package main
+package webchat
 
 import (
 	"container/list"
-	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
 )
-
-type OpCode int
-
-const (
-	MessageOp OpCode = iota
-	HistoryOp
-	NoticeOp
-	JoinOp
-	NickOp
-)
-
-type Message struct {
-	connection *connection
-	Id         int64  `json:"id"`
-	Op         OpCode `json:"op"`
-	From       string `json:"from"`
-	Message    string `json:"message"`
-
-	// pop up a notification
-	Notify bool `json:"notify"`
-}
-
-func (m *Message) Json() []byte {
-	data, _ := json.Marshal(m)
-	return data
-}
-func (m *Message) FromJson(data []byte) error {
-	err := json.Unmarshal(data, m)
-	return err
-}
 
 // a low level message
 type message struct {
@@ -107,7 +76,7 @@ func (h *hub) findConnection(id int64) (*connection, error) {
 	return nil, fmt.Errorf("not found id:%d", id)
 }
 
-func (h *hub) run() {
+func (h *hub) Start() {
 	for {
 		select {
 		case c := <-h.register:

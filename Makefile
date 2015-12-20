@@ -1,2 +1,2 @@
 all:
-	$(MAKE) -C cmd/chat
+	go generate .

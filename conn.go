@@ -1,10 +1,7 @@
-package main
+package webchat
 
 import (
 	"github.com/gorilla/websocket"
-	"log"
-	"net/http"
-	"sync/atomic"
 	"time"
 )
 
@@ -91,23 +88,4 @@ func (c *connection) writePump() {
 			}
 		}
 	}
-}
-
-// serveWs handles websocket requests from the peer.
-func (h *chatHandler) serveWs(w http.ResponseWriter, r *http.Request) {
-	ws, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	id := atomic.AddInt64(&h.connections, 1)
-	c := &connection{
-		id:   id,
-		hub:  h.hub,
-		send: make(chan *Message, 256),
-		ws:   ws,
-	}
-	h.hub.register <- c
-	go c.writePump()
-	c.readPump()
 }

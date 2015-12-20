@@ -1,7 +1,3 @@
-// Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package main
 
 import (
@@ -9,13 +5,13 @@ import (
 	"log"
 	"net/http"
 	"text/template"
+
+	"github.com/sigmonsays/webchat"
 )
 
 var addr = flag.String("addr", ":8080", "http service address")
 
 type chatHandler struct {
-	connections int64
-	hub         *hub
 }
 
 func (h *chatHandler) serveHome(w http.ResponseWriter, r *http.Request) {
@@ -35,16 +31,19 @@ func (h *chatHandler) serveHome(w http.ResponseWriter, r *http.Request) {
 func main() {
 	flag.Parse()
 
-	h := NewHub()
-	go h.run()
+	h := webchat.NewHub()
+	go h.Start()
 
-	srv := &chatHandler{
-		hub: h,
+	srv, err := webchat.NewHandler(h)
+	if err != nil {
+		log.Fatal("NewHandler: ", err)
 	}
 
-	http.HandleFunc("/", srv.serveHome)
-	http.HandleFunc("/ws", srv.serveWs)
-	err := http.ListenAndServe(*addr, nil)
+	index := &chatHandler{}
+
+	http.HandleFunc("/", index.serveHome)
+	http.HandleFunc("/ws", srv.ServeWebSocket)
+	err = http.ListenAndServe(*addr, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
