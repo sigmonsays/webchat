@@ -26,10 +26,11 @@ func (h *Handler) ServeWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	id := atomic.AddInt64(&h.connections, 1)
 	c := &connection{
-		id:   id,
-		hub:  h.hub,
-		send: make(chan *Message, 256),
-		ws:   ws,
+		id:     id,
+		remote: r.RemoteAddr,
+		hub:    h.hub,
+		send:   make(chan *Message, 256),
+		ws:     ws,
 	}
 	h.hub.register <- c
 	go c.writePump()

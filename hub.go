@@ -80,7 +80,7 @@ func (h *hub) Start() {
 	for {
 		select {
 		case c := <-h.register:
-			log.Printf("register connection %#v\n", c)
+			log.Printf("register connection id:%d remote:%s\n", c.id, c.remote)
 			h.connections[c] = true
 
 			// play back history
