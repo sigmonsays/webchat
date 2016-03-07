@@ -78,7 +78,7 @@
     function formatMessage(msg) {
       var links = linkify.find(msg)
       for(i=0; i<links.length; i++) {
-         msg = msg.replace(links[i].href, "<a href='" + links[i].href + "'>" + links[i].href + "</a>")
+         msg = msg.replace(links[i].href, "<a target='_blank' href='" + links[i].href + "'>" + links[i].href + "</a>")
       }
       return msg
     }
