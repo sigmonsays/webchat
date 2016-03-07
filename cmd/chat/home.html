@@ -3,6 +3,7 @@
 <head>
 <title>Chat..</title>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="static/linkify.min.js"></script>
 
 <script>
    var Notification = window.Notification || window.mozNotification || window.webkitNotification;
@@ -72,6 +73,14 @@
            if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
        }
        return "";
+    }
+
+    function formatMessage(msg) {
+      var links = linkify.find(msg)
+      for(i=0; i<links.length; i++) {
+         msg = msg.replace(links[i].href, "<a href='" + links[i].href + "'>" + links[i].href + "</a>")
+      }
+      return msg
     }
 
     var username = getCookie("username")
@@ -167,7 +176,7 @@
 
                   var d = Date().toLocaleString()
                   prefix = d + " <" + data['from'] + "> "
-                  appendLog($("<div/>").text(prefix + data['message']))
+                  appendLog($("<div/>").html(prefix + formatMessage(data['message'])))
                   if (data['notify'] == true) {
                      showNotification(data['from'], data['message'])
                   }

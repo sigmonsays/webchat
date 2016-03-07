@@ -3,6 +3,8 @@ package main
 import (
 	"container/list"
 	"flag"
+	"path/filepath"
+	"os"
 	"fmt"
 	"log"
 	"net/http"
@@ -90,6 +92,15 @@ func (h *chatHandler) handleMessage(op webchat.OpCode, hub *webchat.Hub, c *webc
 }
 
 func main() {
+
+   gopath := os.Getenv("GOPATH")
+   var staticDir string
+   flag.StringVar(&staticDir, "static", "", "location of static data")
+
+   if staticDir == "" && gopath != "" {
+      staticDir = filepath.Join(gopath, "src/github.com/sigmonsays/webchat/static")
+   }
+
 	flag.Parse()
 
 	hub := webchat.NewHub()
@@ -117,12 +128,16 @@ func main() {
 
    mx := http.NewServeMux()
 
+   static := http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir)))
+
 	mx.HandleFunc("/", handler.serveHome)
 	mx.HandleFunc("/ws", srv.ServeWebSocket)
+	mx.Handle("/static/", static)
 
    alias := "/chat"
 	mx.HandleFunc(alias, handler.serveHome)
 	mx.HandleFunc(alias + "/ws", srv.ServeWebSocket)
+	mx.Handle(alias + "/static/", static)
 
    hs := &http.Server{
       Addr: *addr,
