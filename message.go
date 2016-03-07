@@ -27,6 +27,9 @@ const (
 
 	// a user has changed their nick name
 	NickOp
+
+   // a ping to keep the websocket connection alive
+	PingOp
 )
 
 type Message struct {

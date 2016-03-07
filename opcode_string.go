@@ -4,9 +4,9 @@ package webchat
 
 import "fmt"
 
-const _OpCode_name = "InvalidOpRegisterOpUnregisterOpMessageOpNoticeOpJoinOpNickOp"
+const _OpCode_name = "InvalidOpRegisterOpUnregisterOpMessageOpNoticeOpJoinOpNickOpPingOp"
 
-var _OpCode_index = [...]uint8{0, 9, 19, 31, 40, 48, 54, 60}
+var _OpCode_index = [...]uint8{0, 9, 19, 31, 40, 48, 54, 60, 66}
 
 func (i OpCode) String() string {
 	if i < 0 || i >= OpCode(len(_OpCode_index)-1) {

@@ -14,6 +14,7 @@
    var NoticeOp = 4
    var JoinOp = 5
    var NickOp = 6
+   var PingOp = 7
 
    function requestNotifyPermission() {
       Notification.requestPermission(function (permission) {
@@ -120,7 +121,17 @@
 
     if (window["WebSocket"]) {
         conn = new WebSocket("ws://{{$}}/ws");
+
         conn.onopen = function(evt) {
+            var ping = function() {
+               data = {
+                  'op': PingOp,
+                  'from': name.val(),
+               }
+               conn.send(JSON.stringify(data))
+               setTimeout(ping, 30000)
+            }
+            ping()
             data = {
                'op': JoinOp,
                'from': name.val(),
@@ -148,7 +159,9 @@
                   appendLog($("<div/>").text(prefix + data['message']))
                   showNotification("notice", data['message'])
                } else if ( (data['op'] == MessageOp) || (data['op'] == HistoryOp) ) {
-                  prefix = "<" + data['from'] + "> "
+
+                  var d = Date().toLocaleString()
+                  prefix = d + " <" + data['from'] + "> "
                   appendLog($("<div/>").text(prefix + data['message']))
                   if (data['notify'] == true) {
                      showNotification(data['from'], data['message'])
