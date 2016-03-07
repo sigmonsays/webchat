@@ -120,7 +120,11 @@
     });
 
     if (window["WebSocket"]) {
-        conn = new WebSocket("ws://{{$}}/ws");
+        var wsproto = "ws:"
+        if (window.location.protocol == "https:") {
+           wsproto = "wss:"
+        }
+        conn = new WebSocket(wsproto + "//{{$}}/ws");
 
         conn.onopen = function(evt) {
             var ping = function() {
