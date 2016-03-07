@@ -24,10 +24,7 @@ type chatHandler struct {
 }
 
 func (h *chatHandler) serveHome(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.Error(w, "Not found", 404)
-		return
-	}
+	log.Printf("request %s", r.URL)
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", 405)
 		return
@@ -118,9 +115,21 @@ func main() {
 	}
 	go hub.Start()
 
-	http.HandleFunc("/", handler.serveHome)
-	http.HandleFunc("/ws", srv.ServeWebSocket)
-	err = http.ListenAndServe(*addr, nil)
+   mx := http.NewServeMux()
+
+	mx.HandleFunc("/", handler.serveHome)
+	mx.HandleFunc("/ws", srv.ServeWebSocket)
+
+   alias := "/chat"
+	mx.HandleFunc(alias, handler.serveHome)
+	mx.HandleFunc(alias + "/ws", srv.ServeWebSocket)
+
+   hs := &http.Server{
+      Addr: *addr,
+      Handler: mx,
+   }
+
+	err = hs.ListenAndServe()
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

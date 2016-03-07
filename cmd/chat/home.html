@@ -124,7 +124,8 @@
         if (window.location.protocol == "https:") {
            wsproto = "wss:"
         }
-        conn = new WebSocket(wsproto + "//{{$}}/ws");
+        console.log("websocket protocol " + wsproto)
+        conn = new WebSocket(wsproto + "//{{$}}/chat/ws");
 
         conn.onopen = function(evt) {
             var ping = function() {
