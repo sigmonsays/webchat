@@ -3,11 +3,11 @@ package main
 import (
 	"container/list"
 	"flag"
-	"path/filepath"
-	"os"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
 	"text/template"
 
@@ -21,8 +21,9 @@ const (
 var addr = flag.String("addr", ":8080", "http service address")
 
 type chatHandler struct {
-	mx      sync.Mutex
-	history *list.List
+	mx        sync.Mutex
+	staticDir string
+	history   *list.List
 }
 
 func (h *chatHandler) serveHome(w http.ResponseWriter, r *http.Request) {
@@ -31,8 +32,9 @@ func (h *chatHandler) serveHome(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", 405)
 		return
 	}
+	home_html := filepath.Join(h.staticDir, "home.html")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	homeTempl := template.Must(template.ParseFiles("home.html"))
+	homeTempl := template.Must(template.ParseFiles(home_html))
 	homeTempl.Execute(w, r.Host)
 }
 
@@ -93,13 +95,13 @@ func (h *chatHandler) handleMessage(op webchat.OpCode, hub *webchat.Hub, c *webc
 
 func main() {
 
-   gopath := os.Getenv("GOPATH")
-   var staticDir string
-   flag.StringVar(&staticDir, "static", "", "location of static data")
+	gopath := os.Getenv("GOPATH")
+	var staticDir string
+	flag.StringVar(&staticDir, "static", "", "location of static data")
 
-   if staticDir == "" && gopath != "" {
-      staticDir = filepath.Join(gopath, "src/github.com/sigmonsays/webchat/static")
-   }
+	if staticDir == "" && gopath != "" {
+		staticDir = filepath.Join(gopath, "src/github.com/sigmonsays/webchat/static")
+	}
 
 	flag.Parse()
 
@@ -111,7 +113,8 @@ func main() {
 	}
 
 	handler := &chatHandler{
-		history: list.New(),
+		staticDir: staticDir,
+		history:   list.New(),
 	}
 
 	opcodes := []webchat.OpCode{
@@ -126,23 +129,23 @@ func main() {
 	}
 	go hub.Start()
 
-   mx := http.NewServeMux()
+	mx := http.NewServeMux()
 
-   static := http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir)))
+	log.Printf("serving static data from %s", staticDir)
 
 	mx.HandleFunc("/", handler.serveHome)
 	mx.HandleFunc("/ws", srv.ServeWebSocket)
-	mx.Handle("/static/", static)
+	mx.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
 
-   alias := "/chat"
+	alias := "/chat"
 	mx.HandleFunc(alias, handler.serveHome)
-	mx.HandleFunc(alias + "/ws", srv.ServeWebSocket)
-	mx.Handle(alias + "/static/", static)
+	mx.HandleFunc(alias+"/ws", srv.ServeWebSocket)
+	mx.Handle(alias+"/static/", http.StripPrefix(alias+"/static/", http.FileServer(http.Dir(staticDir))))
 
-   hs := &http.Server{
-      Addr: *addr,
-      Handler: mx,
-   }
+	hs := &http.Server{
+		Addr:    *addr,
+		Handler: mx,
+	}
 
 	err = hs.ListenAndServe()
 	if err != nil {
