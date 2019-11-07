@@ -14,8 +14,6 @@ spec:
       containers:
       - name: webchat
         image: sigmonsays/webchat:latest
-        command: 
-        - /webchat
         ports:
           - containerPort: 8080
         resources:
