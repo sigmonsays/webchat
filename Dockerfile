@@ -11,13 +11,12 @@ RUN apt-get install \
 COPY . /go/src/github.com/sigmonsays/webchat/
 RUN go get -d .
 ENV GOPATH=/go
-RUN go install github.com/sigmonsays/webchat/...
+RUN go install -ldflags '-w -extldflags "-static"' github.com/sigmonsays/webchat/...
 
 # ---
 
-FROM alpine:3.9
-RUN apk add --no-cache ca-certificates
+FROM golang:1.11-stretch
 COPY --from=build /go/bin/chat /webchat
+COPY --from=build /go/src/github.com/sigmonsays/webchat/static /go/static
 EXPOSE  8080
-ENTRYPOINT [ "/webchat" ]
-CMD [ "-h" ]
+CMD [ "/webchat", "-static", "/go/static"  ]
