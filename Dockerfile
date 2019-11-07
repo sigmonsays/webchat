@@ -1,7 +1,4 @@
 
-# GitHub:       https://github.com/gohugoio
-# Twitter:      https://twitter.com/gohugoio
-# Website:      https://gohugo.io/
 
 FROM golang:1.11-stretch AS build
 
