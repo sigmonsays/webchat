@@ -4,7 +4,6 @@ all:
 docker:
 	docker build -t webchat .
 
-   #  publish
-	#
-	#     docker tag webchat sigmonsays/webchat:latest
-	#     docker push sigmonsays/webchat:latest
+publish:
+	docker tag webchat sigmonsays/webchat:latest
+	docker push sigmonsays/webchat:latest
