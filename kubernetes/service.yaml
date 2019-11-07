@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: webchat
+spec:
+  type: LoadBalancer
+  selector:
+    app: webchat
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+
