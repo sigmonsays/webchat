@@ -13,7 +13,11 @@ spec:
     spec:
       containers:
       - name: webchat
-        image: sigmonsays/webchat:latest
+        image: sigmonsays/webchat:1.0
+        command: 
+        - /webchat
+        - -static
+        - /go/static
         ports:
           - containerPort: 8080
         resources:
