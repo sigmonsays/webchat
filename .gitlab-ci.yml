@@ -1,7 +1,7 @@
 image: golang:latest
 
 variables:
-  REPO_NAME: grepped.org/sigmonsays/webchat
+  REPO_NAME: github.com/sigmonsays/webchat
 
 
 # The problem is that to be able to use go get, one needs to put
