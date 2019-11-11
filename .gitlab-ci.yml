@@ -23,7 +23,9 @@ stages:
 format:
   stage: test
   script:
-    - go test github.com/sigmonsays/webchat/...
+    - pwd
+    - ls
+    - find -type f
 
 compile:
   stage: build
