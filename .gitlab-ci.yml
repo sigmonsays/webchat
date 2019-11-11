@@ -16,9 +16,16 @@ before_script:
   - cd $GOPATH/src/$REPO_NAME
 
 stages:
+  - prepare
   - test
   - build
   - deploy
+
+
+prep:
+  stage: prepare
+  script:
+    - go get -u ./...
 
 format:
   stage: test
