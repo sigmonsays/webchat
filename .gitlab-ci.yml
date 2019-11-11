@@ -23,12 +23,12 @@ stages:
 format:
   stage: test
   script:
-    - go test grepped.org/sigmonsays/webchat/...
+    - go test github.com/sigmonsays/webchat/...
 
 compile:
   stage: build
   script:
-    - go build grepped.org/sigmonsays/webchat -o $CI_PROJECT_DIR/webchat
+    - go build -o $CI_PROJECT_DIR/webchat github.com/sigmonsays/webchat/cmd/chat
   artifacts:
     paths:
       - webchat
