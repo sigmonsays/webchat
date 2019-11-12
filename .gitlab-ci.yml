@@ -16,16 +16,21 @@ before_script:
   - cd $GOPATH/src/$REPO_NAME
 
 stages:
+  - debug
   - prepare
   - test
   - build
   - deploy
 
+debug:
+  stage: debug
+  script:
+    - go env
 
 prep:
   stage: prepare
   script:
-    - go get -insecure -u ./...
+    - echo go get -insecure -u ./...
 
 format:
   stage: test
