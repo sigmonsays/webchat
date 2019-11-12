@@ -30,7 +30,7 @@ debug:
 prep:
   stage: prepare
   script:
-    - echo go get -insecure -u ./...
+    - dep ensure
 
 format:
   stage: test
