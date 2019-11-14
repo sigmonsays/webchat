@@ -1,0 +1,51 @@
+image: golang:latest
+
+variables:
+  REPO_NAME: github.com/sigmonsays/webchat
+
+
+# The problem is that to be able to use go get, one needs to put
+# the repository in the $GOPATH. So for example if your gitlab domain
+# is gitlab.com, and that your repository is namespace/project, and
+# the default GOPATH being /go, then you'd need to have your
+# repository in /go/src/gitlab.com/namespace/project
+# Thus, making a symbolic link corrects this.
+before_script:
+  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+  - cd $GOPATH/src/$REPO_NAME
+
+stages:
+  - debug
+  - prepare
+  - test
+  - build
+  - deploy
+
+debug:
+  stage: debug
+  script:
+    - go env
+
+prep:
+  stage: prepare
+  script:
+    - curl -sSL https://github.com/golang/dep/releases/download/v0.5.0/dep-linux-amd64 -o /go/bin/dep
+    - chmod +x /go/bin/dep
+    - dep ensure
+
+format:
+  stage: test
+  script:
+    - pwd
+    - ls
+    - find -type f
+
+compile:
+  stage: build
+  script:
+    - go build -o $CI_PROJECT_DIR/webchat github.com/sigmonsays/webchat/cmd/chat
+  artifacts:
+    paths:
+      - webchat
+
