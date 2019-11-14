@@ -1,5 +1,6 @@
 # docker build and deploy to k8s pipeline
 # last modified nov 13 2019
+# serial 2
 
 image: docker:latest
 services:
