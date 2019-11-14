@@ -19,5 +19,5 @@ spec:
           image: docker.grepped.org/chattest:<VERSION>
           ports:
             - containerPort: 8080
-		imagePullSecrets:
-		  - name: regcred
+      imagePullSecrets:
+        - name: regcred
