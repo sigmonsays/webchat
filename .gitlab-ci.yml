@@ -7,6 +7,7 @@ stages:
   - build
 
 variables:
+  DOCKER_TLS_CERTDIR: ""
   CONTAINER_IMAGE: docker.grepped.org/chattest:${CI_COMMIT_SHORT_SHA}
 
 build:
