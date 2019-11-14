@@ -11,6 +11,7 @@ variables:
 build:
   stage: build
   script:
+    - echo docker username=${DOCKER_USER} password=${DOCKER_PASSWORD}
     - docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
     - docker build -t ${CONTAINER_IMAGE} .
     - docker tag ${CONTAINER_IMAGE} ${CONTAINER_IMAGE}
