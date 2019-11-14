@@ -1,7 +1,7 @@
 #!/bin/bash
 
+kubectl delete secret docker-registry regcred
 kubectl create secret docker-registry regcred \
-   --docker-server=https://docker.grepped.org/v1/ \
+   --docker-server=docker.grepped.org \
    --docker-username=admin \
-   --docker-password=admin123 \
-   --docker-email=sig.lange@gmail.com
+   --docker-password=admin123
